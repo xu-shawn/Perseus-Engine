@@ -97,7 +97,7 @@ Score Game::search(Score alpha, Score beta, Depth depth, const bool cutNode, SSt
     bool improving = true;
     // const Move excludedMove = ss->excludedMove;
     // Guard from pvlen editing when in singular extension
-    // if (!excludedMove) 
+    // if (!excludedMove)
         pvLen[ply] = ply;
 
     // Update seldepth
@@ -173,7 +173,7 @@ Score Game::search(Score alpha, Score beta, Depth depth, const bool cutNode, SSt
         // improving = false;
         goto skipPruning;
     }
-    
+
 
     // Get static eval of the position
     if (ttHit)
@@ -244,14 +244,14 @@ Score Game::search(Score alpha, Score beta, Depth depth, const bool cutNode, SSt
                     return nullScore;
             }
         }
-    
+
         // Razoring
         if (depth <= razorDepth && abs(eval) < mateScore && eval + razorQ1 + depth * razorQ2 < alpha)
         {
             const Score razorScore = quiescence(alpha, beta, ss);
             if (razorScore <= alpha) return razorScore;
         }
-    
+
     }
 
 skipPruning:
@@ -274,7 +274,7 @@ skipPruning:
     // Iterate through moves
     for (int i = (ttMove ? sortTTUp(moveList, ttMove) : 1); i < moveList.count; i++) // Slot 0 is reserved for the tt move, wheter it is present or not
     {
-        
+
         Move currMove = onlyMove(moveList.moves[i]);
         // assert (
         //     i != 0 || !excludedMove ||
@@ -284,19 +284,19 @@ skipPruning:
 
         const bool isQuiet = okToReduce(currMove);
         // const bool givesCheck = isCheck(currMove) || pos.inCheck();
-        
+
         if (makeMove(currMove))
         {
             U64 nodesBefore = nodes;
             // // Singular extension
             // Depth extension = 0;
             // if (i == 0 // Can only happen on ttMove
-            //     && ply < currSearch * 2  
-            //     && !RootNode 
+            //     && ply < currSearch * 2
+            //     && !RootNode
             //     && depth >= singularSearchDepth
-            //     && !excludedMove 
-            //     && (ttBound & hashLOWER) 
-            //     && abs(ttScore) < mateValue 
+            //     && !excludedMove
+            //     && (ttBound & hashLOWER)
+            //     && abs(ttScore) < mateValue
             //     && ttDepth >= depth - 3
             // ){
             //     // Increase singular candidates
@@ -327,7 +327,7 @@ skipPruning:
             ss->contHistEntry = continuationHistoryTable[indexPieceTo(movePiece(currMove), moveTarget(currMove))];
             S32 currMoveScore = getScore(moveList.moves[i]); // - BADNOISYMOVE;
             Score score;
-        
+
             ++nodes;
             // bool givesCheck = isCheck(currMove) || pos.inCheck();
             if (isQuiet) quiets[quietsCount++] = currMove;
@@ -342,7 +342,7 @@ skipPruning:
                     // R -= givesCheck;
                     R -= (S8)std::clamp((currMoveScore - QUIETSCORE) / 8192LL, -2LL, 2LL);
                     if (cutNode) R += 2;
-                    if (ttPv) R -= cutNode;
+                    if (ttPv) R -= 1 + PVNode;
                 }
                 else {
                     if (currMoveScore < GOODNOISYMOVE) {
@@ -353,7 +353,7 @@ skipPruning:
                 }
                 R = std::max(Depth(0), R);
                 R = std::min(Depth(newDepth - Depth(1)), R);
-                
+
 
                 Depth reducedDepth = newDepth - R;
                 // Search at reduced depth
@@ -362,14 +362,14 @@ skipPruning:
                 if (score > alpha && R)
                     score = -search(-alpha - 1, -alpha, newDepth, !cutNode, ss + 1);
             }
-            else 
+            else
                 if (!PVNode || moveSearched)
                     score = -search(-alpha - 1, -alpha, newDepth, !cutNode, ss + 1);
 
             // Pvsearch
             if (PVNode && (!moveSearched || score > alpha))
                 score = -search(-beta, -alpha, newDepth, false, ss + 1);
-            
+
             undo(undoer, currMove);
 
             if (RootNode) nodesPerMoveTable[indexFromTo(moveSource(currMove), moveTarget(currMove))] += nodes - nodesBefore;
@@ -380,7 +380,7 @@ skipPruning:
                 bestScore = score;
                 if (score > alpha) {
                     bestMove = currMove;
-                    
+
                     if (PVNode) {
                         pvTable[ply][ply] = currMove;
                         if (ply + 1 < maxPly) {
@@ -411,7 +411,7 @@ skipPruning:
         // return excludedMove ? alpha : (inCheck ? matedIn(ply) : randomizedDrawScore(nodes)); // Randomize draw score so that we try to explore different lines
         return inCheck ? matedIn(ply) : randomizedDrawScore(nodes);
     }
-        // 
+        //
         // return inCheck ? matedIn(ply) : randomizedDrawScore(nodes); // Randomize draw score so that we try to explore different lines
 
     if (!stopped){ // && !excludedMove){
@@ -435,8 +435,8 @@ Score Game::quiescence(Score alpha, Score beta, SStack *ss)
     if (ply >= maxPly - 1)
         return inCheck ? 0 : evaluate();
 
-    const bool PVNode = (beta - alpha) > 1; 
-    
+    const bool PVNode = (beta - alpha) > 1;
+
      //// TT probe
     ttEntry *tte = probeTT(pos.hashKey); //excludedMove ? nullptr : probeTT(pos.hashKey);
     const bool ttHit = tte;
@@ -465,7 +465,7 @@ Score Game::quiescence(Score alpha, Score beta, SStack *ss)
         }
     }
 
-    const bool ttPv = PVNode || (ttFlags & hashPVMove); 
+    const bool ttPv = PVNode || (ttFlags & hashPVMove);
 
     if (inCheck){
         bestScore = noScore;
@@ -496,7 +496,7 @@ Score Game::quiescence(Score alpha, Score beta, SStack *ss)
     for (int i = sortTTUp(moveList, ttMove); i < moveList.count; i++)
     {
         Move move = onlyMove(moveList.moves[i]);
-        
+
         // SEE pruning : skip all moves that have see < -100 (We may want to do this with a threshold of 0, but we would introduce another see call. TODO: lazily evaluate the see so that we can skip moves with see < 0)
         if (!inCheck && moveCount && getScore(moveList.moves[i]) < GOODNOISYMOVE)
             break;
@@ -525,7 +525,7 @@ Score Game::quiescence(Score alpha, Score beta, SStack *ss)
 
     if (moveCount == 0 && inCheck)
         return matedIn(ply);
-    
+
     U8 ttStoreFlag = bestScore >= beta ? hashLOWER : hashUPPER; // No exact bounds in qsearch
     ttStoreFlag |= ttPv ? hashPVMove : 0;
     writeTT(pos.hashKey, bestScore, ss->staticEval, 0, ttStoreFlag, bestMove, ply, PVNode, ttPv);
@@ -558,7 +558,7 @@ void Game::startSearch(bool halveTT = true)
     lastScore = 0;
 
     // Clear nodesPerMoveTable
-    
+
 
     // killerCutoffs = 0;
     // posKillerSearches = 0;
@@ -620,7 +620,7 @@ void Game::startSearch(bool halveTT = true)
         {
             alpha = std::max(S32(noScore), score - delta);
             beta = std::min(S32(infinity), score + delta);
-            
+
         }
         // Calculate optim base
         while (true)
