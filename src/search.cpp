@@ -342,7 +342,7 @@ skipPruning:
                     // R -= givesCheck;
                     R -= (S8)std::clamp((currMoveScore - QUIETSCORE) / 8192LL, -2LL, 2LL);
                     if (cutNode) R += 2;
-                    if (ttPv) R -= 1 + PVNode;
+                    if (ttPv) R -= 1;
                 }
                 else {
                     if (currMoveScore < GOODNOISYMOVE) {
