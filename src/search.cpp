@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "move.h"
 #include "tables.h"
 #include "constants.h"
 #include "history.h"
@@ -220,7 +221,7 @@ Score Game::search(Score alpha, Score beta, Depth depth, bool cutNode, SStack *s
     if (!PVNode && !excludedMove)
     {
         // RFP
-        if (depth <= RFPDepth() && abs(eval) < mateValue && eval - std::max((Score)15,futilityMargin(depth, improving)) >= beta) // && !excludedMove)
+        if (depth <= RFPDepth() && abs(eval) < mateValue && eval - std::max((Score)15,futilityMargin(depth, improving)) >= beta && (ttMove || isCapture(ttMove))) // && !excludedMove)
             return eval;
         
         // Razoring
