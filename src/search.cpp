@@ -221,9 +221,12 @@ Score Game::search(Score alpha, Score beta, Depth depth, bool cutNode, SStack *s
     if (!PVNode && !excludedMove)
     {
         // RFP
-        if (depth <= RFPDepth() && abs(eval) < mateValue && eval - std::max((Score)15,futilityMargin(depth, improving)) >= beta && (ttMove || isCapture(ttMove))) // && !excludedMove)
+        if (depth <= RFPDepth()
+            && abs(eval) < mateValue
+            && eval - std::max((Score)15,futilityMargin(depth, improving)) >= beta
+            && (!ttMove || !okToReduce(ttMove)))
             return eval;
-        
+
         // Razoring
         if (depth <= razorDepth() && abs(eval) < mateValue && eval + razorQ1() + depth * razorQ2() < alpha && alpha < KNOWNWIN)
         {
